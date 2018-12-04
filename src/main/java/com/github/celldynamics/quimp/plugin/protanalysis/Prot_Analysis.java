@@ -1,6 +1,5 @@
 package com.github.celldynamics.quimp.plugin.protanalysis;
 
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.scijava.vecmath.Point3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class Prot_Analysis extends AbstractPluginQconf {
   private boolean uiCancelled = false;
   ImagePlus image = null;
   // points selected by user for current frame, cleared on each slice shift. In image coordinates
-  HashSet<Point> selected = new HashSet<>();
+  HashSet<Point3i> selected = new HashSet<>();
   // updated on each slice, outlines for current frame
   ArrayList<Outline> outlines = new ArrayList<>();
   /**
