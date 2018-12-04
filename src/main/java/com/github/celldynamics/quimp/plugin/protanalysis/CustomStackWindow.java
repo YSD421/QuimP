@@ -9,6 +9,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Panel;
+import java.awt.Point;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
@@ -156,10 +157,10 @@ class CustomStackWindow extends StackWindow {
   @Override
   public void updateSliceSelector() {
     super.updateSliceSelector();
-    int frame = imp.getCurrentSlice();
+    model.currentFrame = imp.getCurrentSlice();
     model.outlines.clear(); // remove old outlines for old frame
     model.selected.clear();
-    updateOverlay(frame);
+    updateOverlay(model.currentFrame);
 
   }
 
@@ -210,7 +211,7 @@ class CustomStackWindow extends StackWindow {
 @SuppressWarnings("serial")
 class CustomCanvas extends ImageCanvas {
   static final Logger LOGGER = LoggerFactory.getLogger(CustomCanvas.class.getName());
-  Point3i pc = null; // closes point on outline to mouse position (image coordinates)
+  Point pc = null; // closes point on outline to mouse position (image coordinates)
   private Prot_Analysis model; // main model with method to run on ui action
   private int sensitivity = 10; // square of distance
   private Color pointColor = Color.CYAN; // box color
@@ -251,18 +252,14 @@ class CustomCanvas extends ImageCanvas {
    * @param dist max distance
    * @return found point that belongs to outline (image coordinates, frame)
    */
-  private Point3i checkProximity(Point3i current, double dist) {
+  private Point checkProximity(Point current, double dist) {
     // Point current = new Point(screenXD(currentt.getX()), screenYD(currentt.getY()));
     for (Outline o : model.outlines) {
       Rectangle2D.Double bounds = o.getDoubleBounds(); // FIXME cache
-      if (current.getX() >= bounds.getMinX() && current.getX() <= bounds.getMaxX()
-              && current.getY() >= bounds.getMinY() && current.getY() <= bounds.getMaxY()) {
+      if (bounds.contains(current)) { // investigate deeper
         for (Vert v : o) { // over vertices
-          // compute distance
-          if ((Math.pow(current.getX() - v.getX(), 2)
-                  + Math.pow(current.getY() - v.getY(), 2)) < dist) {
-            return new Point3i((int) Math.round(v.getX()), (int) Math.round(v.getY()),
-                    current.getZ());
+          if (current.distanceSq(v.getX(), v.getY()) < dist) {
+            return new Point((int) Math.round(v.getX()), (int) Math.round(v.getY()));
           }
         }
       }
@@ -279,9 +276,9 @@ class CustomCanvas extends ImageCanvas {
   public void mouseMoved(MouseEvent e) {
     super.mouseMoved(e);
     // offscreen - coordinates of the image, regardless zoom. e - absolute coordinates of the window
-    Point3i p = new Point3i(offScreenX(e.getX()), offScreenY(e.getY()), 0); // FIXME Add frame
+    Point p = new Point(offScreenX(e.getX()), offScreenY(e.getY()));
     // LOGGER.trace("e: [" + e.getX() + "," + e.getY() + "] offScreenX: " + p.toString());
-    Point3i ptmp = checkProximity(p, sensitivity);
+    Point ptmp = checkProximity(p, sensitivity);
     if (ptmp != null) { // if there is point close
       pc = ptmp; // set it to current under mouse
       repaint(); // refresh

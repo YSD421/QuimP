@@ -1,11 +1,13 @@
 package com.github.celldynamics.quimp.plugin.protanalysis;
 
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 
 import org.scijava.vecmath.Point3i;
@@ -60,7 +62,7 @@ public class Prot_Analysis extends AbstractPluginQconf {
   private boolean uiCancelled = false;
   ImagePlus image = null;
   // points selected by user for current frame, cleared on each slice shift. In image coordinates
-  HashSet<Point3i> selected = new HashSet<>();
+  PointHashSet selected = new PointHashSet();
   // updated on each slice, outlines for current frame
   ArrayList<Outline> outlines = new ArrayList<>();
   /**
@@ -77,6 +79,8 @@ public class Prot_Analysis extends AbstractPluginQconf {
    * {@link ProtAnalysisUI#actionPerformed(ActionEvent)}
    */
   ResultsTable rt;
+
+  int currentFrame = 0;
 
   /**
    * Default constructor.
@@ -102,7 +106,7 @@ public class Prot_Analysis extends AbstractPluginQconf {
   public Prot_Analysis(String paramString) throws QuimpPluginException {
     // would start computations so we overrode runFromQconf (called by loadFile)
     super(paramString, new ProtAnalysisOptions(), thisPluginName);
-    selected = new HashSet<>();
+    selected = new PointHashSet();
     outlines = new ArrayList<>();
     gui = new CustomStackWindow(this, getImage()); // need to be called after QCONF is loaded
     rt = createCellResultTable();
@@ -409,6 +413,70 @@ public class Prot_Analysis extends AbstractPluginQconf {
    */
   CustomStackWindow getGui() {
     return gui;
+  }
+
+  /**
+   * Keep list of selected points.
+   * 
+   * <p>Reason of this class is that {@link CustomStackWindow} and {@link CustomCanvas} operate on
+   * 2D
+   * images without knowledge about frame, which is important. They also use and use java.awt.Point.
+   * Therefore frame is added in this list to coordinates by overriding
+   * {@link PointHashSet#add(Point)}.
+   * 
+   * <p>Field {@link Prot_Analysis#currentFrame} is delivered by {@link CustomStackWindow} whereas
+   * point operations happen in {@link CustomCanvas}. {@link Prot_Analysis} integrates all
+   * informations.
+   * 
+   * @author p.baniukiewicz
+   *
+   */
+  class PointHashSet extends HashSet<Point3i> {
+
+    private static final long serialVersionUID = 1L;
+
+    public PointHashSet() {
+      super();
+    }
+
+    public PointHashSet(Collection<? extends Point3i> c) {
+      super(c);
+    }
+
+    public PointHashSet(int initialCapacity, float loadFactor) {
+      super(initialCapacity, loadFactor);
+    }
+
+    public PointHashSet(int initialCapacity) {
+      super(initialCapacity);
+    }
+
+    @Override
+    public boolean add(Point3i e) {
+      return super.add(e);
+    }
+
+    /**
+     * Add information about current frame to point.
+     * 
+     * @param e 2D point which will be changed to {@link Point3i} with current frame at z position.
+     * @return true if point exists in set.
+     */
+    public boolean add(Point e) {
+      return add(new Point3i((int) Math.round(e.getX()), (int) Math.round(e.getY()), currentFrame));
+    }
+
+    /**
+     * Remove point from set.
+     * 
+     * @param e point to remove
+     * @return true if exist
+     */
+    public boolean remove(Point e) {
+      return remove(
+              new Point3i((int) Math.round(e.getX()), (int) Math.round(e.getY()), currentFrame));
+    }
+
   }
 
 }
