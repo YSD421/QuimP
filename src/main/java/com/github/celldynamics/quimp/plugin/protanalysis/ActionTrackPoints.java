@@ -3,10 +3,13 @@ package com.github.celldynamics.quimp.plugin.protanalysis;
 import java.awt.event.ActionEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.Action;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.scijava.vecmath.Point3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,27 +50,37 @@ public class ActionTrackPoints extends ProtAnalysisAbstractAction implements Act
 
   void track(QconfLoader qconfLoader) {
     // TODO Finish
-    // Outlines must be plotted with ECMM output but not Snakes otherwise coords do not match
-    // Remember frames as well with ui.getModel().selected
     STmap[] stMap = ((QParamsQconf) qconfLoader.getQp()).getLoadedDataContainer().getQState();
     TrackVisualisation.Image visStackStatic =
             new TrackVisualisation.Image(ui.getImagePlus().duplicate()); // FIXME no duplicate
     visStackStatic.getOriginalImage().setTitle(WindowManager.makeUniqueName("Static tracking"));
-    MaximaFinder mf = new MaximaFinder(ui.getImagePlus().getProcessor());
 
-    List<Point2D> tmpSelected = new ArrayList<>();
-    for (Point3i p : ui.getModel().selected) {
-      int tmpIndex = MapCoordConverter.findPointIndex(stMap[0].getxMap()[p.getZ()],
-              stMap[0].getyMap()[p.getZ()], p.getX(), p.getY(), Double.MAX_VALUE);
+    // order data by cell numbers. For each key (cell number) collect all users points
+    HashMap<Integer, List<Point2D>> tmpSelected = new HashMap<>();
+    for (Pair<Point3i, Integer> p : ui.getModel().selected) {
+      int tmpIndex =
+              MapCoordConverter.findPointIndex(stMap[p.getRight()].getxMap()[p.getLeft().getZ()],
+                      stMap[p.getRight()].getyMap()[p.getLeft().getZ()], p.getLeft().getX(),
+                      p.getLeft().getY(), Double.MAX_VALUE);
       if (tmpIndex >= 0) {
-        tmpSelected.add(new Point2D.Double(0, tmpIndex));
+        // if no cell in HashMap - create
+        if (tmpSelected.get(p.getRight()) == null) {
+          tmpSelected.put(p.getRight(), new ArrayList<Point2D>());
+        }
+        // add point to the cell
+        tmpSelected.get(p.getRight()).add(new Point2D.Double(0, tmpIndex));
       }
     }
     LOGGER.trace("Added " + tmpSelected.size() + " points");
-    mf.setMaxima(tmpSelected); // FIXME max are in map coordinates not xy
-    // for (STmap mapCell : stMap) {
-    visStackStatic.addElementsToImage(stMap[0], null, mf);
-    // }
+    // plot - iterate over cells (keys) and plot all points
+    for (Map.Entry<Integer, List<Point2D>> entry : tmpSelected.entrySet()) {
+      Integer map = entry.getKey(); // cell number
+      List<Point2D> points = entry.getValue(); // users points
+      MaximaFinder mf = new MaximaFinder(ui.getImagePlus().getProcessor());
+      mf.setMaxima(points);
+      visStackStatic.addElementsToImage(stMap[map], null, mf);
+
+    }
     visStackStatic.getOriginalImage().show();
   }
 

@@ -15,6 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.ListIterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -25,6 +26,8 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.scijava.vecmath.Point3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,17 +160,17 @@ class CustomStackWindow extends StackWindow {
   @Override
   public void updateSliceSelector() {
     super.updateSliceSelector();
-    model.currentFrame = imp.getCurrentSlice();
+    model.currentFrame = imp.getCurrentSlice() - 1;
     model.outlines.clear(); // remove old outlines for old frame
     model.selected.clear();
-    updateOverlay(model.currentFrame);
+    updateOverlay(model.currentFrame + 1);
 
   }
 
   /**
    * Plot overlay (outline) at frame.
    * 
-   * @param frame to plot in
+   * @param frame to plot in (1-based)
    */
   public void updateOverlay(int frame) {
     overlay = new Overlay();
@@ -211,7 +214,8 @@ class CustomStackWindow extends StackWindow {
 @SuppressWarnings("serial")
 class CustomCanvas extends ImageCanvas {
   static final Logger LOGGER = LoggerFactory.getLogger(CustomCanvas.class.getName());
-  Point pc = null; // closes point on outline to mouse position (image coordinates)
+  // closest point on outline to mouse position (image coordinates) + index of outline
+  Pair<Point, Integer> pc = null;
   private Prot_Analysis model; // main model with method to run on ui action
   private int sensitivity = 10; // square of distance
   private Color pointColor = Color.CYAN; // box color
@@ -250,16 +254,21 @@ class CustomCanvas extends ImageCanvas {
    * 
    * @param current current mouse position in the image coordinates
    * @param dist max distance
-   * @return found point that belongs to outline (image coordinates, frame)
+   * @return found point that belongs to outline (image coordinates, frame) and outline index in
+   *         {@link Prot_Analysis#outlines}
    */
-  private Point checkProximity(Point current, double dist) {
+  private Pair<Point, Integer> checkProximity(Point current, double dist) {
     // Point current = new Point(screenXD(currentt.getX()), screenYD(currentt.getY()));
-    for (Outline o : model.outlines) {
+    ListIterator<Outline> it = model.outlines.listIterator();
+    while (it.hasNext()) {
+      Integer io = it.nextIndex(); // order!
+      Outline o = it.next();
       Rectangle2D.Double bounds = o.getDoubleBounds(); // FIXME cache
       if (bounds.contains(current)) { // investigate deeper
         for (Vert v : o) { // over vertices
           if (current.distanceSq(v.getX(), v.getY()) < dist) {
-            return new Point((int) Math.round(v.getX()), (int) Math.round(v.getY()));
+            return new ImmutablePair<Point, Integer>(
+                    new Point((int) Math.round(v.getX()), (int) Math.round(v.getY())), io);
           }
         }
       }
@@ -278,7 +287,7 @@ class CustomCanvas extends ImageCanvas {
     // offscreen - coordinates of the image, regardless zoom. e - absolute coordinates of the window
     Point p = new Point(offScreenX(e.getX()), offScreenY(e.getY()));
     // LOGGER.trace("e: [" + e.getX() + "," + e.getY() + "] offScreenX: " + p.toString());
-    Point ptmp = checkProximity(p, sensitivity);
+    Pair<Point, Integer> ptmp = checkProximity(p, sensitivity);
     if (ptmp != null) { // if there is point close
       pc = ptmp; // set it to current under mouse
       repaint(); // refresh
@@ -301,15 +310,15 @@ class CustomCanvas extends ImageCanvas {
     Graphics2D g2 = (Graphics2D) g;
     double half = pointSize / 2;
     if (pc != null) {
-      Rectangle2D e = new Rectangle2D.Double(screenXD(pc.getX()) - half, screenYD(pc.getY()) - half,
-              pointSize, pointSize);
+      Rectangle2D e = new Rectangle2D.Double(screenXD(pc.getLeft().getX()) - half,
+              screenYD(pc.getLeft().getY()) - half, pointSize, pointSize);
       g2.setPaint(pointColor);
       g2.draw(e);
     }
     g2.setPaint(staticPointColor);
-    for (Point3i p : model.selected) {
-      Ellipse2D e = new Ellipse2D.Double(screenXD(p.getX()) - half, screenYD(p.getY()) - half,
-              pointSize, pointSize);
+    for (Pair<Point3i, Integer> p : model.selected) {
+      Ellipse2D e = new Ellipse2D.Double(screenXD(p.getLeft().getX()) - half,
+              screenYD(p.getLeft().getY()) - half, pointSize, pointSize);
       g2.fill(e);
     }
   }

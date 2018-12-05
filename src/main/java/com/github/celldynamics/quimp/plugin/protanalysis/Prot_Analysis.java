@@ -7,9 +7,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.scijava.vecmath.Point3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,9 @@ public class Prot_Analysis extends AbstractPluginQconf {
    */
   ResultsTable rt;
 
+  /**
+   * Current frame, 0-based.
+   */
   int currentFrame = 0;
 
   /**
@@ -420,50 +424,37 @@ public class Prot_Analysis extends AbstractPluginQconf {
    * 
    * <p>Reason of this class is that {@link CustomStackWindow} and {@link CustomCanvas} operate on
    * 2D
-   * images without knowledge about frame, which is important. They also use and use java.awt.Point.
-   * Therefore frame is added in this list to coordinates by overriding
-   * {@link PointHashSet#add(Point)}.
+   * images without knowledge about frame, which is needed. They also use java.awt.Point as main
+   * class. Therefore the point selected in the image by user is added to the list with
+   * {@link PointHashSet#add(Point)},
+   * which incorporates the frame number.
    * 
-   * <p>Field {@link Prot_Analysis#currentFrame} is delivered by {@link CustomStackWindow} whereas
+   * <p>Field {@link Prot_Analysis#currentFrame} is updated by {@link CustomStackWindow} whereas
    * point operations happen in {@link CustomCanvas}. {@link Prot_Analysis} integrates all
    * informations.
    * 
    * @author p.baniukiewicz
    *
    */
-  class PointHashSet extends HashSet<Point3i> {
-
-    private static final long serialVersionUID = 1L;
-
-    public PointHashSet() {
-      super();
-    }
-
-    public PointHashSet(Collection<? extends Point3i> c) {
-      super(c);
-    }
-
-    public PointHashSet(int initialCapacity, float loadFactor) {
-      super(initialCapacity, loadFactor);
-    }
-
-    public PointHashSet(int initialCapacity) {
-      super(initialCapacity);
-    }
-
-    @Override
-    public boolean add(Point3i e) {
-      return super.add(e);
-    }
+  @SuppressWarnings("serial")
+  class PointHashSet extends HashSet<Pair<Point3i, Integer>> {
 
     /**
      * Add information about current frame to point.
      * 
-     * @param e 2D point which will be changed to {@link Point3i} with current frame at z position.
+     * @param e Pair of 2D point which will be changed to {@link Point3i} with current frame at z
+     *        position and cell number (will not be touched).
      * @return true if point exists in set.
      */
-    public boolean add(Point e) {
-      return add(new Point3i((int) Math.round(e.getX()), (int) Math.round(e.getY()), currentFrame));
+    public boolean add(Pair<? extends Point, Integer> e) {
+      // convert from java.awt.Point to Point3i and add frame information
+      Point3i tmpP = new Point3i((int) Math.round(e.getLeft().getX()),
+              (int) Math.round(e.getLeft().getY()), currentFrame);
+      // repack in Pair together with cell number that come from e
+      ImmutablePair<Point3i, Integer> toAdd =
+              new ImmutablePair<Point3i, Integer>(tmpP, e.getRight());
+      LOGGER.debug("Added point: " + toAdd);
+      return add(toAdd);
     }
 
     /**
@@ -472,9 +463,10 @@ public class Prot_Analysis extends AbstractPluginQconf {
      * @param e point to remove
      * @return true if exist
      */
-    public boolean remove(Point e) {
-      return remove(
-              new Point3i((int) Math.round(e.getX()), (int) Math.round(e.getY()), currentFrame));
+    public boolean remove(Pair<? extends Point, Integer> e) {
+      Point3i tmpP = new Point3i((int) Math.round(e.getLeft().getX()),
+              (int) Math.round(e.getLeft().getY()), currentFrame);
+      return remove(new ImmutablePair<Point3i, Integer>(tmpP, e.getRight()));
     }
 
   }
