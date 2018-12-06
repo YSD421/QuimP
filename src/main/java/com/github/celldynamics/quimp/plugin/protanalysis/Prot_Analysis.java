@@ -9,8 +9,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.scijava.vecmath.Point3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -437,7 +435,7 @@ public class Prot_Analysis extends AbstractPluginQconf {
    *
    */
   @SuppressWarnings("serial")
-  class PointHashSet extends HashSet<Pair<Point3i, Integer>> {
+  class PointHashSet extends HashSet<PointCoords> {
 
     /**
      * Add information about current frame to point.
@@ -446,15 +444,11 @@ public class Prot_Analysis extends AbstractPluginQconf {
      *        position and cell number (will not be touched).
      * @return true if point exists in set.
      */
-    public boolean add(Pair<? extends Point, Integer> e) {
-      // convert from java.awt.Point to Point3i and add frame information
-      Point3i tmpP = new Point3i((int) Math.round(e.getLeft().getX()),
-              (int) Math.round(e.getLeft().getY()), currentFrame);
-      // repack in Pair together with cell number that come from e
-      ImmutablePair<Point3i, Integer> toAdd =
-              new ImmutablePair<Point3i, Integer>(tmpP, e.getRight());
-      LOGGER.debug("Added point: " + toAdd);
-      return add(toAdd);
+    @Override
+    public boolean add(PointCoords e) {
+      e.frame = currentFrame;
+      LOGGER.debug("Added point: " + e);
+      return super.add(e);
     }
 
     /**
@@ -463,10 +457,9 @@ public class Prot_Analysis extends AbstractPluginQconf {
      * @param e point to remove
      * @return true if exist
      */
-    public boolean remove(Pair<? extends Point, Integer> e) {
-      Point3i tmpP = new Point3i((int) Math.round(e.getLeft().getX()),
-              (int) Math.round(e.getLeft().getY()), currentFrame);
-      return remove(new ImmutablePair<Point3i, Integer>(tmpP, e.getRight()));
+    public boolean remove(PointCoords e) {
+      e.frame = currentFrame;
+      return super.remove(e);
     }
 
   }
