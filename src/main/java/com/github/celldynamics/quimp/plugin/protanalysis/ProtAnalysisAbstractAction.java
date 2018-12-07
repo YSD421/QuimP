@@ -4,6 +4,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Abstract actions for Prot_Analysis UI.
  * 
@@ -12,8 +15,24 @@ import javax.swing.AbstractAction;
  */
 @SuppressWarnings("serial")
 public abstract class ProtAnalysisAbstractAction extends AbstractAction {
-
+  protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getName());
   protected CustomStackWindow ui;
+  // helpers retrieved from ui
+  protected Prot_Analysis model;
+  protected ProtAnalysisOptions options;
+
+  /**
+   * Constructor for calling actions without AbstractAction.
+   * 
+   * <p>Allows to pass only reference to window and use it as in {@link ActionClearPoints}.
+   * 
+   * @param ui reference to window
+   */
+  public ProtAnalysisAbstractAction(CustomStackWindow ui) {
+    this.ui = ui;
+    this.model = ui.getModel();
+    this.options = (ProtAnalysisOptions) model.getOptions();
+  }
 
   /**
    * Default action.
@@ -26,6 +45,8 @@ public abstract class ProtAnalysisAbstractAction extends AbstractAction {
     super(name);
     putValue(SHORT_DESCRIPTION, desc);
     this.ui = ui;
+    this.model = ui.getModel();
+    this.options = (ProtAnalysisOptions) model.getOptions();
   }
 
   /*

@@ -1,33 +1,24 @@
 package com.github.celldynamics.quimp.plugin.protanalysis;
 
-import java.awt.event.ActionEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.Action;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.celldynamics.quimp.QParamsQconf;
 import com.github.celldynamics.quimp.filesystem.QconfLoader;
 import com.github.celldynamics.quimp.geom.MapCoordConverter;
 import com.github.celldynamics.quimp.plugin.qanalysis.STmap;
 
-import ij.WindowManager;
-
 /**
  * Action for track button.
  * 
- * @author baniu
+ * @author p.baniukiewicz
  *
  */
 @SuppressWarnings("serial")
-public class ActionTrackPoints extends ProtAnalysisAbstractAction implements Action {
-  static final Logger LOGGER = LoggerFactory.getLogger(ActionTrackPoints.class.getName());
+public class ActionDynamicTrackPoints extends AbstractActionTrackPoints {
 
   /**
    * Action creator.
@@ -36,22 +27,23 @@ public class ActionTrackPoints extends ProtAnalysisAbstractAction implements Act
    * @param desc description
    * @param ui reference to outer class.
    */
-  public ActionTrackPoints(String name, String desc, CustomStackWindow ui) {
+  public ActionDynamicTrackPoints(String name, String desc, CustomStackWindow ui) {
     super(name, desc, ui);
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * com.github.celldynamics.quimp.plugin.protanalysis.AbstractActionTrackPoints#track(com.github.
+   * celldynamics.quimp.filesystem.QconfLoader)
+   */
   @Override
-  public void actionPerformed(ActionEvent e) {
-    QconfLoader qconfLoader = ui.getModel().getQconfLoader();
-    track(qconfLoader);
-  }
-
   void track(QconfLoader qconfLoader) {
-    // TODO Finish
     STmap[] stMap = ((QParamsQconf) qconfLoader.getQp()).getLoadedDataContainer().getQState();
-    TrackVisualisation.Image visStackStatic =
-            new TrackVisualisation.Image(ui.getImagePlus().duplicate()); // FIXME no duplicate
-    visStackStatic.getOriginalImage().setTitle(WindowManager.makeUniqueName("Static tracking"));
+    // wrap original image into TrackVisualisation object. All changes will modify the image
+    // Note that TrackVisualisation keeps only reference and adds overlay object to it.
+    TrackVisualisation.Stack visStackDynamic = new TrackVisualisation.Stack(image);
 
     // order data by cell numbers. For each key (cell number) collect all users points
     HashMap<Integer, List<Point2D>> tmpSelected = new HashMap<>();
@@ -64,7 +56,7 @@ public class ActionTrackPoints extends ProtAnalysisAbstractAction implements Act
           tmpSelected.put(p.cellNo, new ArrayList<Point2D>());
         }
         // add point to the cell
-        tmpSelected.get(p.cellNo).add(new Point2D.Double(0, tmpIndex));
+        tmpSelected.get(p.cellNo).add(new Point2D.Double(p.frame, tmpIndex));
       }
     }
     LOGGER.trace("Added " + tmpSelected.size() + " points");
@@ -74,10 +66,16 @@ public class ActionTrackPoints extends ProtAnalysisAbstractAction implements Act
       List<Point2D> points = entry.getValue(); // users points
       MaximaFinder mf = new MaximaFinder(ui.getImagePlus().getProcessor());
       mf.setMaxima(points);
-      visStackStatic.addElementsToImage(stMap[map], null, mf);
 
+      TrackMapAnalyser pt = new TrackMapAnalyser();
+      pt.trackMaxima(stMap[map], -1.0, mf); // TODO Add as parameter
+      TrackCollection trackCollection = pt.getTrackCollection();
+      visStackDynamic.addMaximaToImage(stMap[map], mf);
+      visStackDynamic.addTrackingLinesToImage(stMap[map], trackCollection);
+      // TODO Config option to select outline type
+      visStackDynamic.addOutlinesToImage(stMap[map], options);
     }
-    visStackStatic.getOriginalImage().show();
+
   }
 
 }

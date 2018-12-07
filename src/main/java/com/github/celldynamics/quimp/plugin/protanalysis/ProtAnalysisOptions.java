@@ -17,6 +17,15 @@ import com.github.celldynamics.quimp.plugin.qanalysis.STmap;
 public class ProtAnalysisOptions extends AbstractPluginOptions implements IQuimpSerialize {
 
   /**
+   * Whether to show tracks in new plot or in embedded in GUI.
+   */
+  public boolean guiNewImage = false;
+  /**
+   * Radius of circles plotted by tool.
+   */
+  double circleRadius = 10;
+
+  /**
    * Sensitivity of maximum detection.
    */
   public double noiseTolerance = 1.5;
@@ -85,7 +94,11 @@ public class ProtAnalysisOptions extends AbstractPluginOptions implements IQuimp
     /**
      * CONCANDRETR + CONVANDEXP.
      */
-    BOTH
+    BOTH,
+    /**
+     * Just pure outline.
+     */
+    NONE
   }
 
   /**
@@ -222,7 +235,7 @@ public class ProtAnalysisOptions extends AbstractPluginOptions implements IQuimp
     public OutlinesToImage() {
       motThreshold = 0;
       convThreshold = 0;
-      plotType = OutlinePlotTypes.MOTILITY;
+      plotType = OutlinePlotTypes.NONE;
     }
   }
 

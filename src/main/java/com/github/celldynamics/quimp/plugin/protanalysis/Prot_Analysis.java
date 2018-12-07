@@ -1,6 +1,5 @@
 package com.github.celldynamics.quimp.plugin.protanalysis;
 
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -424,7 +423,7 @@ public class Prot_Analysis extends AbstractPluginQconf {
    * 2D
    * images without knowledge about frame, which is needed. They also use java.awt.Point as main
    * class. Therefore the point selected in the image by user is added to the list with
-   * {@link PointHashSet#add(Point)},
+   * {@link PointHashSet#add(PointCoords)},
    * which incorporates the frame number.
    * 
    * <p>Field {@link Prot_Analysis#currentFrame} is updated by {@link CustomStackWindow} whereas

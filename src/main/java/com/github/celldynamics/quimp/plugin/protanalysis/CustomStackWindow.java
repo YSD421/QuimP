@@ -20,6 +20,7 @@ import java.util.ListIterator;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -61,8 +62,8 @@ class CustomStackWindow extends StackWindow {
   /**
    * Construct the window.
    * 
-   * @param imp ImagePlus image displayed.
-   * @param protAnalysisUI TODO
+   * @param model application logic module (with options)
+   * @param imp ImagePlus image to be displayed.
    */
   public CustomStackWindow(Prot_Analysis model, final ImagePlus imp) {
     super(imp, new CustomCanvas(imp, model));
@@ -87,6 +88,7 @@ class CustomStackWindow extends StackWindow {
    * Build the window.
    */
   public void buildWindow() {
+    ProtAnalysisOptions options = (ProtAnalysisOptions) model.getOptions();
     setLayout(new BorderLayout(10, 10));
     add(ic, BorderLayout.CENTER); // IJ image
     // panel for slidebar to make it more separated from window edges
@@ -99,45 +101,87 @@ class CustomStackWindow extends StackWindow {
     Panel right = new Panel();
     final int rightWidth = 120; // width of the right panel
     right.setLayout(new BoxLayout(right, BoxLayout.PAGE_AXIS));
-    JPanel selectPointsPanel = new JPanel();
-    final int selectPointsPanelHeight = 130;
-    selectPointsPanel.setLayout(new BoxLayout(selectPointsPanel, BoxLayout.PAGE_AXIS));
-    selectPointsPanel.setBorder(BorderFactory.createTitledBorder("Select points"));
+    // point selection panel
     {
-      JTextArea help = new JTextArea("Select points with CTRL key");
-      help.setLineWrap(true);
-      help.setWrapStyleWord(true);
-      help.setAlignmentX(Component.RIGHT_ALIGNMENT);
-      selectPointsPanel.add(help);
+      JPanel selectPointsPanel = new JPanel();
+      final int selectPointsPanelHeight = 160;
+      selectPointsPanel.setLayout(new BoxLayout(selectPointsPanel, BoxLayout.PAGE_AXIS));
+      selectPointsPanel.setBorder(BorderFactory.createTitledBorder("Select points"));
+      {
+        JTextArea help = new JTextArea("Select points with CTRL key");
+        help.setLineWrap(true);
+        help.setWrapStyleWord(true);
+        help.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        selectPointsPanel.add(help);
+      }
+      {
+        JPanel textPanel = new JPanel();
+        textPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        JLabel selected = new JLabel("Selected: ");
+        textPanel.add(selected);
+        textPanel.add(pointsSelected);
+        textPanel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        textPanel.setMaximumSize(new Dimension(rightWidth, textPanel.getMaximumSize().height));
+        selectPointsPanel.add(textPanel);
+      }
+      {
+        JButton bnClear = new JButton();
+        bnClear.setAction(new ActionClearPoints("Remove all", "Remove all selected points", this));
+        bnClear.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bnClear.setMaximumSize(new Dimension(rightWidth, bnClear.getMaximumSize().height));
+        selectPointsPanel.add(bnClear);
+      }
+      {
+        JButton bnTrack = new JButton();
+        bnTrack.setAction(new ActionStaticTrackPoints("Track st", "Track points", this));
+        bnTrack.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bnTrack.setMaximumSize(new Dimension(rightWidth, bnTrack.getMaximumSize().height));
+        selectPointsPanel.add(bnTrack);
+      }
+      {
+        JButton bnTrack = new JButton();
+        bnTrack.setAction(new ActionDynamicTrackPoints("Track dyn", "Track points", this));
+        bnTrack.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bnTrack.setMaximumSize(new Dimension(rightWidth, bnTrack.getMaximumSize().height));
+        selectPointsPanel.add(bnTrack);
+      }
+      selectPointsPanel.setMaximumSize(new Dimension(rightWidth, selectPointsPanelHeight));
+      right.add(selectPointsPanel);
     }
-    {
-      JPanel textPanel = new JPanel();
-      textPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-      JLabel selected = new JLabel("Selected: ");
-      textPanel.add(selected);
-      textPanel.add(pointsSelected);
-      textPanel.setAlignmentX(Component.RIGHT_ALIGNMENT);
-      textPanel.setMaximumSize(new Dimension(rightWidth, textPanel.getMaximumSize().height));
-      selectPointsPanel.add(textPanel);
-    }
-    {
-      JButton bnClear = new JButton();
-      bnClear.setAction(new ActionClearPoints("Clear", "Clear points", this));
-      bnClear.setAlignmentX(Component.RIGHT_ALIGNMENT);
-      bnClear.setMaximumSize(new Dimension(rightWidth, bnClear.getMaximumSize().height));
-      selectPointsPanel.add(bnClear);
-    }
-    {
-      JButton bnTrack = new JButton();
-      bnTrack.setAction(new ActionTrackPoints("Track", "Track points", this));
-      bnTrack.setAlignmentX(Component.RIGHT_ALIGNMENT);
-      bnTrack.setMaximumSize(new Dimension(rightWidth, bnTrack.getMaximumSize().height));
-      selectPointsPanel.add(bnTrack);
-    }
-    selectPointsPanel.setMaximumSize(new Dimension(rightWidth, selectPointsPanelHeight));
-    right.add(selectPointsPanel);
-    add(right, BorderLayout.EAST);
 
+    // clear panel
+    {
+      JPanel clearPanel = new JPanel();
+      clearPanel.setLayout(new BoxLayout(clearPanel, BoxLayout.PAGE_AXIS));
+      clearPanel.setBorder(BorderFactory.createTitledBorder("Clear image"));
+      {
+        JButton bnClearOvelay = new JButton();
+        bnClearOvelay.setAction(new ActionClearOverlay("Clear", "Clear Overlay", this));
+        bnClearOvelay.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bnClearOvelay
+                .setMaximumSize(new Dimension(rightWidth, bnClearOvelay.getMaximumSize().height));
+        clearPanel.add(bnClearOvelay);
+      }
+      right.add(clearPanel);
+    }
+    // Options panel
+    {
+      JPanel optionsPanel = new JPanel();
+      optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
+      optionsPanel.setBorder(BorderFactory.createTitledBorder("Options"));
+      {
+        JCheckBox chbNewImage = new JCheckBox();
+        chbNewImage.setAction(
+                new ActionNewImage("New image", "Always open new image with tracks", this));
+        chbNewImage.setSelected(options.guiNewImage);
+        chbNewImage.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        chbNewImage.setMaximumSize(new Dimension(rightWidth, chbNewImage.getMaximumSize().height));
+        optionsPanel.add(chbNewImage);
+      }
+      right.add(optionsPanel);
+    }
+
+    add(right, BorderLayout.EAST);
     pack();
     updateStaticFields();
     // this.setSize(600, 600);
@@ -153,13 +197,14 @@ class CustomStackWindow extends StackWindow {
    * - Clear outlines array (keep outlines only for current frame)
    * - Clear selected points
    * - Update overlay for new frame
+   * TODO Comply with new image checkbox
    */
   @Override
   public void updateSliceSelector() {
     super.updateSliceSelector();
     model.currentFrame = imp.getCurrentSlice() - 1;
+    new ActionClearPoints(this).clear();
     model.outlines.clear(); // remove old outlines for old frame
-    model.selected.clear();
     updateOverlay(model.currentFrame + 1);
 
   }
