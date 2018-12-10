@@ -36,7 +36,7 @@ public class ActionStaticTrackPoints extends AbstractActionTrackPoints {
     // wrap original image into TrackVisualisation object. All changes will modify the image
     // Note that TrackVisualisation keeps only reference and adds overlay object to it.
     TrackVisualisation.Stack visStackStatic = new TrackVisualisation.Stack(image);
-    visStackStatic.circleRadius = options.circleRadius; // TODO move to parameters
+    visStackStatic.circleRadius = options.circleRadius;
 
     // order data by cell numbers. For each key (cell number) collect all users points
     HashMap<Integer, List<Point2D>> tmpSelected = new HashMap<>();

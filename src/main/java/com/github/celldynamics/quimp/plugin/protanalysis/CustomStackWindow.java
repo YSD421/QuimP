@@ -180,6 +180,21 @@ class CustomStackWindow extends StackWindow {
       }
       right.add(optionsPanel);
     }
+    // 2D plot panel
+    {
+      JPanel plot2dPanel = new JPanel();
+      plot2dPanel.setLayout(new BoxLayout(plot2dPanel, BoxLayout.PAGE_AXIS));
+      plot2dPanel.setBorder(BorderFactory.createTitledBorder("Plots"));
+      {
+        JButton bnPlot2d = new JButton();
+        bnPlot2d.setAction(new ActionPlot2d("Plot", "Plot selected", this));
+        bnPlot2d.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bnPlot2d.setMaximumSize(new Dimension(rightWidth, bnPlot2d.getMaximumSize().height));
+        plot2dPanel.add(bnPlot2d);
+      }
+      right.add(plot2dPanel);
+
+    }
 
     add(right, BorderLayout.EAST);
     pack();

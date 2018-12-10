@@ -541,7 +541,7 @@ public class QconfLoader {
 
   /**
    * 
-   * @return Q object from loaded configuration
+   * @return Stats object from loaded configuration
    * @throws QuimpException when there is no such object in file or old format is used.
    */
   public StatsCollection getStats() throws QuimpException {
