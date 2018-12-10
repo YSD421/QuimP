@@ -31,10 +31,229 @@ import ij.plugin.ZProjector;
 
 /*
  * !>
- * @startuml doc-files/Prot_Analysis_1_UML.png
- * Prot_Analysis *-- "1" ProtAnalysisOptions
- * Prot_Analysis *-- "1" ProtAnalysisUI
- * ProtAnalysisUI o-- "1" ProtAnalysisOptions
+ * @startuml
+ * salt
+ * {
+ *  {^"Visual tracking"
+ *    {+
+ *    Text field with help
+ *    ...
+ *    // Select points with   // 
+ *    // CTRL key//
+ *    }
+ *    **Selected:**             4
+ *    {
+ *    [to ROI] | [from ROI]
+ *    }
+ *    [Clear all points]
+ *    { (X) Static | () Dynamic}
+ *    [X] Show tracked point
+ *    ^Outline color  ^
+ *    [ ] Open in new image
+ *    [Track           ]
+ *    [Clear Overlay   ] 
+ *  }
+ *  {^"Maps"
+ *  ^Select cell     ^
+ *    { [Mot ] | [Convex] | [Fluo] }
+ *  }
+ *  {^"Tables and plots"
+ *    [X] Plot selected
+ *    ^Select cell     ^
+ *    { (X) Ch1 | ( ) Ch2 | ( ) Ch3}
+ *    ...
+ *    {
+ *    [X] X-Centr | [ ] Y-Centr
+ *    [ ] Displ | [ ] Distance 
+ *    [ ] Direct | [ ] Speed
+ *    [ ] Perim | [ ] Elong
+ *    [ ] Circ | [ ] Area
+ *    ==== | ===
+ *    [ ] Total fl | [ ] Mean fl
+ *    [ ] Cortex wd | [ ] Cyto ar
+ *    [ ] Total ctf | [ ] Mean ctf
+ *    [ ] Cortex ar | [ ] Total ctf
+ *    [ ] Mean ctf |     
+ *   }
+ *  ===
+ *  [Generate           ]
+ *  }
+ *  {^"Ploar plots"
+ *  [Click point        ]
+ *  [Get from ROI       ]
+ *  Selected point:     127,45
+ *  ^Select relative to^
+ *  [Show plots         ]
+ *  }
+ * }
+ * @enduml
+ * 
+ * @startuml
+ * 
+ * usecase UC0 as "**Load QCONF**
+ * --
+ * Open QCONF file
+ * ..UC0.."
+ * 
+ * usecase UC1 as "**Select points on contour**
+ * --
+ * Use can click and select multiple
+ * points in cell contour.
+ * ==
+ * This works within all frames
+ * ..UC1..
+ * "
+ * 
+ * usecase UC2 as "**Transfer points to ROI**
+ * -- 
+ * Selected points can be
+ * copied to ROI manager
+ * ..UC2..
+ * "
+ * 
+ * usecase UC3 as "**Transfer points from ROI**
+ * --
+ * Copy points from ROI
+ * manager and show them
+ * in contour.
+ * ==
+ * * Delete old points
+ * * Deal with different
+ * frames
+ * ..UC3..
+ * "
+ * 
+ * usecase UC4 as "**Show selected points**
+ * --
+ * Show points for each frame
+ * as user slide slider
+ * ..UC4..
+ * "
+ * 
+ * usecase UC5 as "**Clear points**
+ * --
+ * Remove all points
+ * ..UC5.."
+ * 
+ * usecase UC6 as "**Track points**
+ * --
+ * Perform tracking for
+ * selected points
+ * ==
+ * Regards static or dynamic
+ * ..UC6..
+ * "
+ * 
+ * usecase UC7 as "**Display tracking**
+ * --
+ * Show results on screen
+ * ==
+ * * Depending on settings show
+ * in original window or separate
+ * * Show dynamic or static
+ * * Color outline
+ * ..UC7..
+ * "
+ * 
+ * usecase UC8 as "**Color outline**
+ * --
+ * Show outline in selected
+ * color
+ * ==
+ * Colorscale scaled to range
+ * ..UC8..
+ * "
+ * 
+ * usecase UC9 as "**Clear overlay**
+ * --
+ * Clear tracking
+ * ==
+ * * Clear original window
+ * * Remove points
+ * ..UC9.."
+ * 
+ * usecase UC10 as "**Plot maps**
+ * --
+ * Show selected maps
+ * ==
+ * Together with transferring
+ * ROI allows to select
+ * maxim on the map and
+ * track them
+ * ..UC10.."
+ * 
+ * usecase UC11 as "**Plot 2d**
+ * --
+ * Plot selected metrics as
+ * 2D plot in function of
+ * frames
+ * ==
+ * * Can open many plots at
+ * once
+ * * Should allow to select
+ * cell and channel
+ * ..UC11.."
+ * 
+ * usecase UC12 as "**Copy to table**
+ * --
+ * Copy selected metrics to
+ * IJ table.
+ * ==
+ * * Should allow to select
+ * cell and channel
+ * ..UC12..
+ * "
+ * 
+ * usecase UC13 as "**Polar plots**
+ * --
+ * Generate polar plots
+ * ==
+ * * Save or show (depending on IJ
+ * features in showing vector files)
+ * * Show in log if saved
+ * ..UC13..
+ * "
+ * 
+ * usecase UC14 as "**Select origin point**
+ * --
+ * Allow to select origin
+ * point for polar plots
+ * ==
+ * * click on screen
+ * * Relative to screen
+ * * Relative to cell
+ * ..UC14..
+ * "
+ * 
+ * note bottom of (UC12) : Decide how to deal\nwith many tables
+ * 
+ * note right of (UC8)
+ * Decide if standalone
+ * Now dependend from UC7
+ * Tracking must be done first and 
+ * tracking map shown but this can
+ * be a standalone option as well
+ * end note
+ * 
+ * note right of (UC13) : For all cells\nor add selector?
+ * 
+ * User -> (UC0)
+ * User -> (UC1)
+ * (UC1) ..> (UC4) : <<include>>
+ * User -> (UC12)
+ * User -> (UC5)
+ * User -> (UC3)
+ * (UC3) ..> (UC5) : <<extend>>
+ * User -> (UC2)
+ * User -> (UC6)
+ * (UC6) ..> (UC7) : <<include>>
+ * (UC7) ..> (UC8) : <<include>>
+ * User -> (UC9)
+ * (UC9) ..> (UC5) : <<extend>>
+ * User --> (UC10)
+ * User --> (UC11)
+ * User --> (UC13)
+ * (UC13) ..> (UC14) : <<include>>
  * @enduml
  * !<
  */
